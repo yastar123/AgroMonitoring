@@ -89,7 +89,7 @@ export default function Footer() {
                       }
                     }}
                   >
-                    <i className="fas fa-chevron-right mr-2 text-xs"></i>
+                    <i className="fas text-white fa-chevron-right mr-2 text-xs"></i>
                     {link.name}
                   </a>
                 </li>
