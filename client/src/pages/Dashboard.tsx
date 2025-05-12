@@ -8,7 +8,7 @@ import RecentData from "@/components/RecentData";
 import ImageSection from "@/components/ImageSection";
 import { subscribeToRecentSensorData, subscribeToChartData } from "@/lib/firebase";
 import { FirebaseSensorData } from "@shared/schema";
-import { ChartPeriod, calculateStats, getTimeSinceUpdate } from "@/lib/types";
+import { ChartPeriod, calculateStats, getTimeSinceUpdate, TrendType } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {

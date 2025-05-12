@@ -48,8 +48,11 @@ export function getTimeSinceUpdate(timestamp: number): string {
   return `${days} hari lalu`;
 }
 
+// Trend type
+export type TrendType = 'up' | 'down' | 'stable';
+
 // Calculate trend based on previous data
-export function calculateTrend(current: number, previous: number): string {
+export function calculateTrend(current: number, previous: number): TrendType {
   if (!previous) return 'stable';
   
   const percentChange = ((current - previous) / previous) * 100;
@@ -77,8 +80,8 @@ export function calculateStats(data: FirebaseSensorData[]) {
       maxLux: 0,
       minTemp: 0,
       maxTemp: 0,
-      luxTrend: 'stable',
-      tempTrend: 'stable',
+      luxTrend: 'stable' as TrendType,
+      tempTrend: 'stable' as TrendType,
       luxChange: 0,
       tempChange: 0,
       lastUpdated: 0

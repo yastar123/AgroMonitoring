@@ -1,12 +1,14 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { TrendType } from "@/lib/types";
+
 interface SensorCardProps {
   title: string;
   value: number;
   unit: string;
   icon: string;
   color: "primary" | "secondary" | "accent" | "accent-dark";
-  trend?: "up" | "down" | "stable";
+  trend?: TrendType;
   change?: number;
   lastUpdated?: string;
   isAverage?: boolean;
