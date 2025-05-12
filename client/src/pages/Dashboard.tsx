@@ -97,9 +97,45 @@ export default function Dashboard() {
       <Header />
       
       <main className="flex-grow container mx-auto px-4 py-6">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-neutral-darkest">Monitoring Cahaya dan Suhu Tanaman</h2>
-          <p className="text-neutral-dark mt-2">Sistem pemantauan real-time untuk optimalisasi pertumbuhan tanaman</p>
+        {/* Hero Section */}
+        <div className="relative bg-gradient-to-r from-primary to-secondary rounded-xl overflow-hidden mb-8 shadow-lg">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 left-0 transform -translate-x-1/4 -translate-y-1/4">
+              <i className="fas fa-leaf text-white text-9xl"></i>
+            </div>
+            <div className="absolute bottom-0 right-0 transform translate-x-1/4 translate-y-1/4">
+              <i className="fas fa-sun text-white text-9xl"></i>
+            </div>
+          </div>
+          <div className="relative z-10 px-6 py-10 md:py-12 text-center md:text-left flex flex-col md:flex-row items-center">
+            <div className="md:w-3/4">
+              <h2 className="text-2xl md:text-3xl font-bold text-white">Monitoring Cahaya dan Suhu Tanaman</h2>
+              <p className="text-white text-opacity-90 mt-2 max-w-2xl">
+                Sistem pemantauan real-time untuk optimalisasi pertumbuhan tanaman. Pantau kondisi lingkungan dan 
+                tingkatkan hasil panen Anda dengan teknologi monitoring terkini.
+              </p>
+              <div className="flex flex-wrap gap-3 mt-4 justify-center md:justify-start">
+                <div className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-white text-sm flex items-center">
+                  <i className="fas fa-check-circle mr-1 text-accent-light"></i>
+                  <span>Data Real-time</span>
+                </div>
+                <div className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-white text-sm flex items-center">
+                  <i className="fas fa-check-circle mr-1 text-accent-light"></i>
+                  <span>Analisis Otomatis</span>
+                </div>
+                <div className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-white text-sm flex items-center">
+                  <i className="fas fa-check-circle mr-1 text-accent-light"></i>
+                  <span>Rekomendasi Penyesuaian</span>
+                </div>
+              </div>
+            </div>
+            <div className="md:w-1/4 mt-6 md:mt-0 flex justify-center">
+              <div className="bg-white bg-opacity-10 p-5 rounded-full w-32 h-32 md:w-40 md:h-40 flex items-center justify-center">
+                <i className="fas fa-seedling text-white text-6xl"></i>
+              </div>
+            </div>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-accent to-accent-light"></div>
         </div>
         
         {/* Sensor Overview Cards */}

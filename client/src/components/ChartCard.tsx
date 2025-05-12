@@ -86,34 +86,46 @@ export default function ChartCard({
   }, [data, period, dataKey]);
   
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-semibold text-neutral-darkest">{title}</h3>
-        <div className="flex space-x-2">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className={period === '24h' ? colorMap[color].button : colorMap[color].inactive}
-            onClick={() => onPeriodChange('24h')}
-          >
-            24 Jam
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className={period === '7d' ? colorMap[color].button : colorMap[color].inactive}
-            onClick={() => onPeriodChange('7d')}
-          >
-            7 Hari
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className={period === '30d' ? colorMap[color].button : colorMap[color].inactive}
-            onClick={() => onPeriodChange('30d')}
-          >
-            30 Hari
-          </Button>
+    <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 relative overflow-hidden">
+      {/* Background decorative patterns */}
+      <div className="absolute inset-0 opacity-5 pointer-events-none">
+        <div className={`absolute -bottom-8 -right-8 text-8xl text-${color} transform rotate-12`}>
+          <i className={`fas fa-${dataKey === 'light_intensity' ? 'sun' : 'temperature-half'}`}></i>
+        </div>
+      </div>
+      
+      <div className="relative">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3 md:gap-0">
+          <div className="flex items-center">
+            <div className={`w-3 h-10 bg-${color} rounded-full mr-3`}></div>
+            <h3 className="font-semibold text-neutral-darkest text-lg">{title}</h3>
+          </div>
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className={`${period === '24h' ? colorMap[color].button : colorMap[color].inactive} rounded-md`}
+              onClick={() => onPeriodChange('24h')}
+            >
+              24 Jam
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className={`${period === '7d' ? colorMap[color].button : colorMap[color].inactive} rounded-md`}
+              onClick={() => onPeriodChange('7d')}
+            >
+              7 Hari
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className={`${period === '30d' ? colorMap[color].button : colorMap[color].inactive} rounded-md`}
+              onClick={() => onPeriodChange('30d')}
+            >
+              30 Hari
+            </Button>
+          </div>
         </div>
       </div>
       
@@ -167,28 +179,34 @@ export default function ChartCard({
         )}
       </div>
       
-      <div className="flex justify-between items-center mt-4 text-xs text-neutral-dark">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-4 pt-3 border-t border-gray-100">
         <div className="flex items-center">
-          <div className={`h-3 w-3 ${color === 'primary' ? 'bg-primary' : 'bg-secondary'} rounded-full mr-1`}></div>
-          <span>{dataKey === 'light_intensity' ? 'Intensitas Cahaya (lux)' : 'Suhu (°C)'}</span>
+          <div className={`h-4 w-4 ${color === 'primary' ? 'bg-primary' : 'bg-secondary'} rounded-full mr-2 shadow-sm`}></div>
+          <span className="text-sm text-neutral-dark">{dataKey === 'light_intensity' ? 'Intensitas Cahaya (lux)' : 'Suhu (°C)'}</span>
         </div>
-        <div>
-          <span className="font-medium">Min: </span>
-          <span>
-            {isLoading ? (
-              <Skeleton className="h-3 w-10 inline-block" />
-            ) : (
-              dataKey === 'light_intensity' ? min.toLocaleString('id-ID') : min.toFixed(1)
-            )} {unit}
-          </span> | 
-          <span className="font-medium"> Max: </span>
-          <span>
-            {isLoading ? (
-              <Skeleton className="h-3 w-10 inline-block" />
-            ) : (
-              dataKey === 'light_intensity' ? max.toLocaleString('id-ID') : max.toFixed(1)
-            )} {unit}
-          </span>
+        
+        <div className="flex gap-3 text-xs">
+          <div className="bg-gray-100 px-3 py-1.5 rounded-lg flex items-center">
+            <span className="font-medium text-neutral-darkest mr-1">Min:</span>
+            <span>
+              {isLoading ? (
+                <Skeleton className="h-3 w-10 inline-block" />
+              ) : (
+                dataKey === 'light_intensity' ? min.toLocaleString('id-ID') : min.toFixed(1)
+              )} {unit}
+            </span>
+          </div>
+          
+          <div className="bg-gray-100 px-3 py-1.5 rounded-lg flex items-center">
+            <span className="font-medium text-neutral-darkest mr-1">Max:</span>
+            <span>
+              {isLoading ? (
+                <Skeleton className="h-3 w-10 inline-block" />
+              ) : (
+                dataKey === 'light_intensity' ? max.toLocaleString('id-ID') : max.toFixed(1)
+              )} {unit}
+            </span>
+          </div>
         </div>
       </div>
     </div>

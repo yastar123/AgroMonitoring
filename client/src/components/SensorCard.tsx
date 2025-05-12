@@ -67,7 +67,7 @@ export default function SensorCard({
   };
   
   return (
-    <div className={`sensor-card bg-white rounded-lg shadow-md p-5 border-l-4 ${colorMap[color].border}`}>
+    <div className={`sensor-card bg-white rounded-xl shadow-lg p-5 border-b-4 ${colorMap[color].border} hover:translate-y-[-5px] transition-all duration-300`}>
       <div className="flex justify-between items-start">
         <div>
           <h3 className="text-neutral-dark text-sm font-medium">{title}</h3>
@@ -79,23 +79,31 @@ export default function SensorCard({
             </p>
           )}
         </div>
-        <div className={`p-2 ${colorMap[color].bg} rounded-full`}>
+        <div className={`p-3 ${colorMap[color].bg} rounded-full flex items-center justify-center shadow-md`}>
           <i className={`fas fa-${icon} text-xl ${colorMap[color].icon}`}></i>
         </div>
       </div>
-      <div className="mt-4">
+      
+      <div className="mt-3 pt-3 border-t border-gray-100">
         <div className="flex justify-between items-center text-sm">
           {!isAverage ? (
             <>
-              <span className="text-neutral">
+              <span className="text-neutral flex items-center">
                 {isLoading ? (
                   <Skeleton className="h-4 w-32" />
                 ) : (
-                  `Pembaruan terakhir: ${lastUpdated}`
+                  <>
+                    <i className="fas fa-history text-neutral-dark mr-1 opacity-70"></i>
+                    <span>{lastUpdated}</span>
+                  </>
                 )}
               </span>
               {trend && (
-                <span className="flex items-center text-primary font-medium">
+                <span className={`flex items-center font-medium px-2 py-1 rounded-full text-xs
+                  ${trend === 'up' ? 'bg-green-100 text-green-700' : 
+                    trend === 'down' ? 'bg-red-100 text-red-700' : 
+                    'bg-gray-100 text-gray-700'}`
+                }>
                   <i className={`fas ${getTrendIcon()} mr-1`}></i>
                   <span>{change}%</span>
                 </span>
@@ -103,9 +111,12 @@ export default function SensorCard({
             </>
           ) : (
             <>
-              <span className="text-neutral">24 jam terakhir</span>
+              <span className="text-neutral flex items-center">
+                <i className="fas fa-calendar-day text-neutral-dark mr-1 opacity-70"></i>
+                <span>24 jam terakhir</span>
+              </span>
               {!isLoading && (
-                <span className="flex items-center text-primary font-medium">
+                <span className="flex items-center text-primary font-medium bg-primary bg-opacity-10 px-2 py-1 rounded-full text-xs">
                   <i className="fas fa-check-circle mr-1"></i>
                   <span>Optimal</span>
                 </span>
