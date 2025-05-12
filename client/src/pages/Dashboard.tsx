@@ -139,7 +139,7 @@ export default function Dashboard() {
         </div>
         
         {/* Sensor Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div id="dashboard" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 scroll-mt-20">
           <SensorCard 
             title="Intensitas Cahaya (Saat Ini)"
             value={stats.currentLux}
@@ -186,73 +186,204 @@ export default function Dashboard() {
         </div>
         
         {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <ChartCard 
-            title="Intensitas Cahaya"
-            data={chartData}
-            dataKey="light_intensity"
-            unit="lux"
-            color="primary"
-            period={chartPeriod}
-            onPeriodChange={handlePeriodChange}
-            min={stats.minLux}
-            max={stats.maxLux}
-            isLoading={isLoading}
-          />
-          
-          <ChartCard 
-            title="Suhu Lingkungan"
-            data={chartData}
-            dataKey="temperature"
-            unit="°C"
-            color="secondary"
-            period={chartPeriod}
-            onPeriodChange={handlePeriodChange}
-            min={stats.minTemp}
-            max={stats.maxTemp}
-            isLoading={isLoading}
-          />
+        <div id="statistik" className="mb-8 scroll-mt-20">
+          <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 relative overflow-hidden mb-6">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent-light to-accent"></div>
+            <div className="absolute -left-10 -bottom-10 opacity-5 pointer-events-none">
+              <i className="fas fa-chart-line text-9xl text-accent"></i>
+            </div>
+            
+            <div className="relative">
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center text-white shadow-md mr-4">
+                  <i className="fas fa-chart-line text-xl"></i>
+                </div>
+                <h3 className="text-xl font-bold text-neutral-darkest">Visualisasi Data Monitoring</h3>
+              </div>
+              
+              {/* Line Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <ChartCard 
+                  title="Intensitas Cahaya"
+                  data={chartData}
+                  dataKey="light_intensity"
+                  unit="lux"
+                  color="primary"
+                  period={chartPeriod}
+                  onPeriodChange={handlePeriodChange}
+                  min={stats.minLux}
+                  max={stats.maxLux}
+                  isLoading={isLoading}
+                />
+                
+                <ChartCard 
+                  title="Suhu Lingkungan"
+                  data={chartData}
+                  dataKey="temperature"
+                  unit="°C"
+                  color="secondary"
+                  period={chartPeriod}
+                  onPeriodChange={handlePeriodChange}
+                  min={stats.minTemp}
+                  max={stats.maxTemp}
+                  isLoading={isLoading}
+                />
+              </div>
+              
+              {/* Additional Charts Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                {/* Bar Chart for Hourly Averages */}
+                <div className="bg-neutral-lightest p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <h4 className="text-neutral-darkest font-semibold mb-3 flex items-center">
+                    <i className="fas fa-chart-bar text-primary mr-2"></i>
+                    Rata-rata per Jam
+                  </h4>
+                  <div className="h-56 flex items-center justify-center">
+                    {isLoading ? (
+                      <div className="text-center text-neutral-dark">
+                        <i className="fas fa-circle-notch fa-spin text-2xl mb-2"></i>
+                        <p>Memuat data...</p>
+                      </div>
+                    ) : (
+                      <div className="text-center text-neutral-dark p-6">
+                        <i className="fas fa-chart-bar text-4xl text-neutral-medium mb-3"></i>
+                        <p>Statistik rata-rata per jam akan ditampilkan di sini</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Pie Chart for Optimal vs Non-optimal */}
+                <div className="bg-neutral-lightest p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <h4 className="text-neutral-darkest font-semibold mb-3 flex items-center">
+                    <i className="fas fa-chart-pie text-secondary mr-2"></i>
+                    Distribusi Status
+                  </h4>
+                  <div className="h-56 flex items-center justify-center">
+                    {isLoading ? (
+                      <div className="text-center text-neutral-dark">
+                        <i className="fas fa-circle-notch fa-spin text-2xl mb-2"></i>
+                        <p>Memuat data...</p>
+                      </div>
+                    ) : (
+                      <div className="text-center text-neutral-dark p-6">
+                        <i className="fas fa-chart-pie text-4xl text-neutral-medium mb-3"></i>
+                        <p>Distribusi status kondisi tanaman akan ditampilkan di sini</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Comparison Gauge */}
+                <div className="bg-neutral-lightest p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <h4 className="text-neutral-darkest font-semibold mb-3 flex items-center">
+                    <i className="fas fa-tachometer-alt text-accent-dark mr-2"></i>
+                    Perbandingan dengan Target
+                  </h4>
+                  <div className="h-56 flex items-center justify-center">
+                    {isLoading ? (
+                      <div className="text-center text-neutral-dark">
+                        <i className="fas fa-circle-notch fa-spin text-2xl mb-2"></i>
+                        <p>Memuat data...</p>
+                      </div>
+                    ) : (
+                      <div className="text-center text-neutral-dark p-6">
+                        <i className="fas fa-tachometer-alt text-4xl text-neutral-medium mb-3"></i>
+                        <p>Perbandingan kondisi aktual dengan target ideal akan ditampilkan di sini</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         
         {/* Detailed Data Section */}
-        <div className="grid grid-cols-1 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
-            <h3 className="font-semibold text-neutral-darkest mb-4">Ringkasan Kondisi Tanaman</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <InfoCard 
-                title="Status Pencahayaan"
-                color="primary"
-                isOptimal={stats.currentLux >= 2000 && stats.currentLux <= 4000}
-                data={[
-                  "Rentang ideal: 2,000 - 4,000 lux",
-                  "Waktu paparan optimal: 8-10 jam/hari",
-                  `Pengukuran terakhir: ${stats.currentLux} lux (${stats.currentLux >= 2000 && stats.currentLux <= 4000 ? "optimal" : "perlu penyesuaian"})`
-                ]}
-              />
+        <div id="ringkasan" className="grid grid-cols-1 gap-6 mb-8 scroll-mt-20">
+          <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 relative overflow-hidden">
+            {/* Decorative background elements */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-secondary"></div>
+            <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none">
+              <i className="fas fa-seedling text-9xl text-primary"></i>
+            </div>
+            
+            <div className="relative">
+              <div className="flex items-center mb-6">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white shadow-md mr-4">
+                  <i className="fas fa-clipboard-check text-xl"></i>
+                </div>
+                <h3 className="text-xl font-bold text-neutral-darkest">Ringkasan Kondisi Tanaman</h3>
+              </div>
               
-              <InfoCard 
-                title="Status Suhu"
-                color="secondary"
-                isOptimal={stats.currentTemp >= 22 && stats.currentTemp <= 30}
-                data={[
-                  "Rentang ideal: 22°C - 30°C",
-                  "Fluktuasi suhu terjaga dengan baik",
-                  `Suhu saat ini: ${stats.currentTemp}°C (${stats.currentTemp >= 22 && stats.currentTemp <= 30 ? "optimal" : "perlu penyesuaian"})`
-                ]}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <InfoCard 
+                  title="Status Pencahayaan"
+                  color="primary"
+                  isOptimal={stats.currentLux >= 2000 && stats.currentLux <= 4000}
+                  data={[
+                    "Rentang ideal: 2,000 - 4,000 lux",
+                    "Waktu paparan optimal: 8-10 jam/hari",
+                    `Pengukuran terakhir: ${stats.currentLux.toLocaleString('id-ID')} lux (${stats.currentLux >= 2000 && stats.currentLux <= 4000 ? "optimal" : "perlu penyesuaian"})`
+                  ]}
+                />
+                
+                <InfoCard 
+                  title="Status Suhu"
+                  color="secondary"
+                  isOptimal={stats.currentTemp >= 22 && stats.currentTemp <= 30}
+                  data={[
+                    "Rentang ideal: 22°C - 30°C",
+                    "Fluktuasi suhu terjaga dengan baik",
+                    `Suhu saat ini: ${stats.currentTemp.toFixed(1)}°C (${stats.currentTemp >= 22 && stats.currentTemp <= 30 ? "optimal" : "perlu penyesuaian"})`
+                  ]}
+                />
+              </div>
+              
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="bg-neutral-lightest p-4 rounded-lg border border-gray-100 text-sm">
+                    <h4 className="font-semibold text-neutral-darkest mb-2 flex items-center">
+                      <i className="fas fa-lightbulb text-accent-dark mr-2"></i>
+                      Tips Peningkatan Kondisi
+                    </h4>
+                    <ul className="space-y-1 text-neutral-dark">
+                      <li className="flex items-start">
+                        <i className="fas fa-chevron-right text-primary mr-2 mt-1 text-xs"></i>
+                        <span>{stats.currentLux < 2000 ? "Tingkatkan paparan cahaya dengan mengurangi naungan" : stats.currentLux > 4000 ? "Kurangi paparan cahaya langsung dengan memberikan naungan" : "Pertahankan kondisi cahaya saat ini"}</span>
+                      </li>
+                      <li className="flex items-start">
+                        <i className="fas fa-chevron-right text-primary mr-2 mt-1 text-xs"></i>
+                        <span>{stats.currentTemp < 22 ? "Tingkatkan suhu dengan mengurangi ventilasi atau menggunakan pemanas" : stats.currentTemp > 30 ? "Kurangi suhu dengan meningkatkan ventilasi atau pendinginan" : "Pertahankan kondisi suhu saat ini"}</span>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <div className="flex">
+                    <button className="px-4 py-2 bg-primary text-white rounded-lg shadow-sm hover:bg-primary-dark transition-colors flex items-center">
+                      <i className="fas fa-file-download mr-2"></i>
+                      Unduh Laporan
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
         
         {/* Recent Data Section */}
-        <RecentData 
-          data={recentData.slice(0, 5)} 
-          onRefresh={handleDataRefresh}
-          isLoading={isLoading}
-        />
+        <div id="data-terbaru" className="scroll-mt-20">
+          <RecentData 
+            data={recentData.slice(0, 5)} 
+            onRefresh={handleDataRefresh}
+            isLoading={isLoading}
+          />
+        </div>
         
         {/* Image Section */}
-        <ImageSection />
+        <div id="tentang" className="scroll-mt-20">
+          <ImageSection />
+        </div>
       </main>
       
       <Footer />

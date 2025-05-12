@@ -11,12 +11,13 @@ export default function Footer() {
     { name: "Analisis Real-time", icon: "bolt" }
   ];
   
-  // Tautan cepat
+  // Tautan cepat - gunakan ID untuk scroll to section
   const quickLinks = [
-    { name: "Dashboard", path: "/" },
-    { name: "Statistik", path: "/statistik" },
-    { name: "Panduan", path: "/panduan" },
-    { name: "Tentang", path: "/tentang" }
+    { name: "Dashboard", path: "#dashboard" },
+    { name: "Statistik", path: "#statistik" },
+    { name: "Ringkasan", path: "#ringkasan" },
+    { name: "Data Terbaru", path: "#data-terbaru" },
+    { name: "Tentang", path: "#tentang" }
   ];
 
   // Informasi kontak
@@ -77,12 +78,20 @@ export default function Footer() {
             <ul className="space-y-2">
               {quickLinks.map((link, index) => (
                 <li key={index}>
-                  <Link href={link.path}>
-                    <div className="text-gray-300 hover:text-accent-light transition-colors text-sm flex items-center cursor-pointer">
-                      <i className="fas fa-chevron-right mr-2 text-xs"></i>
-                      {link.name}
-                    </div>
-                  </Link>
+                  <a 
+                    href={link.path}
+                    className="text-gray-300 hover:text-accent-light transition-colors text-sm flex items-center cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const element = document.querySelector(link.path);
+                      if (element) {
+                        element.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
+                  >
+                    <i className="fas fa-chevron-right mr-2 text-xs"></i>
+                    {link.name}
+                  </a>
                 </li>
               ))}
             </ul>

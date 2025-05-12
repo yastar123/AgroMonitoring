@@ -43,12 +43,13 @@ export default function Header() {
     }
   }, [isMobile]);
   
-  // Navigation links
+  // Navigation links with anchor IDs
   const navLinks = [
-    { name: "Dashboard", path: "/" },
-    { name: "Statistik", path: "/statistik" },
-    { name: "Panduan", path: "/panduan" },
-    { name: "Tentang", path: "/tentang" }
+    { name: "Dashboard", path: "#dashboard" },
+    { name: "Statistik", path: "#statistik" },
+    { name: "Ringkasan", path: "#ringkasan" },
+    { name: "Data Terbaru", path: "#data-terbaru" },
+    { name: "Tentang", path: "#tentang" }
   ];
   
   return (
@@ -73,11 +74,20 @@ export default function Header() {
         <div className="hidden md:flex items-center space-x-6">
           <nav className="flex items-center space-x-4">
             {navLinks.map((link, index) => (
-              <Link key={index} href={link.path}>
-                <div className="text-white hover:text-accent-light transition-colors duration-200 text-sm font-medium cursor-pointer">
-                  {link.name}
-                </div>
-              </Link>
+              <a 
+                key={index} 
+                href={link.path}
+                className="text-white hover:text-accent-light transition-colors duration-200 text-sm font-medium cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const element = document.querySelector(link.path);
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+              >
+                {link.name}
+              </a>
             ))}
           </nav>
           
@@ -110,14 +120,23 @@ export default function Header() {
         <div className="md:hidden bg-primary-dark py-3 px-4 shadow-lg animate-accordion-down">
           <nav className="flex flex-col space-y-3">
             {navLinks.map((link, index) => (
-              <Link key={index} href={link.path}>
-                <div 
-                  className="text-white hover:text-accent-light transition-colors duration-200 py-2 border-b border-white border-opacity-10 cursor-pointer"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {link.name}
-                </div>
-              </Link>
+              <a 
+                key={index} 
+                href={link.path}
+                className="text-white hover:text-accent-light transition-colors duration-200 py-2 border-b border-white border-opacity-10 cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsMenuOpen(false);
+                  const element = document.querySelector(link.path);
+                  if (element) {
+                    setTimeout(() => {
+                      element.scrollIntoView({ behavior: 'smooth' });
+                    }, 300);
+                  }
+                }}
+              >
+                {link.name}
+              </a>
             ))}
           </nav>
           <div className="flex flex-col space-y-2 mt-3 pt-2 border-t border-white border-opacity-10">
