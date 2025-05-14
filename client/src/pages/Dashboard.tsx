@@ -23,32 +23,31 @@ export default function Dashboard() {
   useEffect(() => {
     setIsLoading(true);
     const unsubscribe = subscribeToRecentSensorData((data) => {
-      setRecentData(data);
-      setIsLoading(false);
-
       if (data.length > 0) {
+        setRecentData(prevData => {
+          // Keep only the last 50 readings
+          const newData = [...prevData, ...data].slice(-50);
+          return newData;
+        });
         setLastUpdated(getTimeSinceUpdate(data[0].timestamp));
-
-        // Notify the user if using sample data (when there's a Firestore permission issue)
-        if (data[0].status === "Optimal" && data.every(item => item.status === "Optimal")) {
-          toast({
-            title: "Menggunakan data demo",
-            description: "Menampilkan data demo untuk contoh visualisasi. Untuk menggunakan data sensor real-time, sesuaikan izin Firestore.",
-          });
-        }
       }
-    }, 50); // Get 50 recent entries for stats calculation
+      setIsLoading(false);
+    });
 
     return () => unsubscribe();
-  }, [toast]);
+  }, []);
 
   // Subscribe to chart data
   useEffect(() => {
-    const hours = chartPeriod === '24h' ? 24 : chartPeriod === '7d' ? 168 : 720;
-
     const unsubscribe = subscribeToChartData((data) => {
-      setChartData(data);
-    }, hours);
+      if (data.length > 0) {
+        setChartData(prevData => {
+          // Keep only the last 24 readings for the chart
+          const newData = [...prevData, ...data].slice(-24);
+          return newData;
+        });
+      }
+    });
 
     return () => unsubscribe();
   }, [chartPeriod]);
@@ -57,7 +56,7 @@ export default function Dashboard() {
   useEffect(() => {
     const interval = setInterval(() => {
       if (recentData.length > 0) {
-        setLastUpdated(getTimeSinceUpdate(recentData[0].timestamp));
+        setLastUpdated(getTimeSinceUpdate(recentData[recentData.length - 1].timestamp));
       }
     }, 30000); // Update every 30 seconds
 
@@ -77,10 +76,7 @@ export default function Dashboard() {
       description: "Mengambil data terbaru dari sensor",
     });
 
-    // We don't need to manually refresh since we're using Firestore's onSnapshot
-    // The listeners will automatically update when new data arrives
-
-    // Just to provide feedback to user, we'll simulate a refresh by setting loading
+    // The data will be automatically updated through the real-time subscription
     setTimeout(() => {
       setIsLoading(false);
       toast({
@@ -93,10 +89,11 @@ export default function Dashboard() {
   const stats = calculateStats(recentData);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <main className="flex-grow container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-8">
+
         {/* Hero Section */}
         <div className="relative bg-gradient-to-r from-primary to-secondary rounded-xl overflow-hidden mb-8 shadow-lg">
           <div className="absolute inset-0 opacity-10">
@@ -138,10 +135,11 @@ export default function Dashboard() {
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-accent to-accent-light"></div>
         </div>
 
-        {/* Sensor Overview Cards */}
-        <div id="dashboard" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 scroll-mt-20">
+
+        {/* Sensor Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <SensorCard
-            title="Intensitas Cahaya (Saat Ini)"
+            title="Intensitas Cahaya"
             value={stats.currentLux}
             unit="lux"
             icon="sun"
@@ -153,7 +151,7 @@ export default function Dashboard() {
           />
 
           <SensorCard
-            title="Suhu (Saat Ini)"
+            title="Suhu"
             value={stats.currentTemp}
             unit="°C"
             icon="temperature-half"
@@ -165,7 +163,7 @@ export default function Dashboard() {
           />
 
           <SensorCard
-            title="Intensitas Cahaya (Rata-rata Harian)"
+            title="Rata-rata Cahaya"
             value={stats.avgLux}
             unit="lux"
             icon="chart-line"
@@ -175,140 +173,74 @@ export default function Dashboard() {
           />
 
           <SensorCard
-            title="Suhu (Rata-rata Harian)"
+            title="Rata-rata Suhu"
             value={stats.avgTemp}
             unit="°C"
             icon="chart-line"
-            color="primary"
+            color="accent-dark"
             isAverage={true}
             isLoading={isLoading}
           />
         </div>
 
-        {/* Charts Section */}
-        <div id="statistik" className="mb-8 scroll-mt-20">
-          <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 relative overflow-hidden mb-6">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent-light to-accent"></div>
-            <div className="absolute -left-10 -bottom-10 opacity-5 pointer-events-none">
-              <i className="fas fa-chart-line text-9xl text-accent"></i>
-            </div>
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <ChartCard
+            title="Intensitas Cahaya"
+            data={chartData}
+            dataKey="light_intensity"
+            unit="lux"
+            color="primary"
+            period={chartPeriod}
+            onPeriodChange={handlePeriodChange}
+            min={stats.minLux}
+            max={stats.maxLux}
+            isLoading={isLoading}
+          />
 
-            <div className="relative">
-              <div className="flex items-center mb-4">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center text-white shadow-md mr-4">
-                  <i className="fas fa-chart-line text-xl"></i>
-                </div>
-                <h3 className="text-xl font-bold text-neutral-darkest">Visualisasi Data Monitoring</h3>
-              </div>
-
-              {/* Line Charts */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <ChartCard
-                  title="Intensitas Cahaya"
-                  data={chartData}
-                  dataKey="light_intensity"
-                  unit="lux"
-                  color="primary"
-                  period={chartPeriod}
-                  onPeriodChange={handlePeriodChange}
-                  min={stats.minLux}
-                  max={stats.maxLux}
-                  isLoading={isLoading}
-                />
-
-                <ChartCard
-                  title="Suhu Lingkungan"
-                  data={chartData}
-                  dataKey="temperature"
-                  unit="°C"
-                  color="secondary"
-                  period={chartPeriod}
-                  onPeriodChange={handlePeriodChange}
-                  min={stats.minTemp}
-                  max={stats.maxTemp}
-                  isLoading={isLoading}
-                />
-              </div>
-            </div>
-          </div>
+          <ChartCard
+            title="Suhu"
+            data={chartData}
+            dataKey="temperature"
+            unit="°C"
+            color="secondary"
+            period={chartPeriod}
+            onPeriodChange={handlePeriodChange}
+            min={stats.minTemp}
+            max={stats.maxTemp}
+            isLoading={isLoading}
+          />
         </div>
 
-        {/* Detailed Data Section */}
-        <div id="ringkasan" className="grid grid-cols-1 gap-6 mb-8 scroll-mt-20">
-          <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 relative overflow-hidden">
-            {/* Decorative background elements */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-secondary"></div>
-            <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none">
-              <i className="fas fa-seedling text-9xl text-primary"></i>
-            </div>
+        {/* Info Cards */}
+        <div className="grid text-white grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <InfoCard
+            title="Status Pencahayaan"
+            color="primary"
+            isOptimal={stats.currentLux >= 2000 && stats.currentLux <= 4000}
+            data={[
+              "Rentang ideal: 2,000 - 4,000 lux",
+              "Waktu paparan optimal: 8-10 jam/hari",
+              `Pengukuran terakhir: ${stats.currentLux.toLocaleString('id-ID')} lux (${stats.currentLux >= 2000 && stats.currentLux <= 4000 ? "optimal" : "perlu penyesuaian"})`
+            ]}
+          />
 
-            <div className="relative">
-              <div className="flex items-center mb-6">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white shadow-md mr-4">
-                  <i className="fas fa-clipboard-check text-xl"></i>
-                </div>
-                <h3 className="text-xl font-bold text-neutral-darkest">Ringkasan Kondisi Tanaman</h3>
-              </div>
-
-              <div className="grid text-white bg-slate-300 grid-cols-1 md:grid-cols-2 gap-8">
-                <InfoCard
-                  title="Status Pencahayaan"
-                  color="primary"
-                  isOptimal={stats.currentLux >= 2000 && stats.currentLux <= 4000}
-                  data={[
-                    "Rentang ideal: 2,000 - 4,000 lux",
-                    "Waktu paparan optimal: 8-10 jam/hari",
-                    `Pengukuran terakhir: ${stats.currentLux.toLocaleString('id-ID')} lux (${stats.currentLux >= 2000 && stats.currentLux <= 4000 ? "optimal" : "perlu penyesuaian"})`
-                  ]}
-                />
-
-                <InfoCard
-                  title="Status Suhu"
-                  color="secondary"
-                  isOptimal={stats.currentTemp >= 22 && stats.currentTemp <= 30}
-                  data={[
-                    "Rentang ideal: 22°C - 30°C",
-                    "Fluktuasi suhu terjaga dengan baik",
-                    `Suhu saat ini: ${stats.currentTemp.toFixed(1)}°C (${stats.currentTemp >= 22 && stats.currentTemp <= 30 ? "optimal" : "perlu penyesuaian"})`
-                  ]}
-                />
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-gray-100">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="bg-neutral-lightest p-4 rounded-lg border border-gray-100 text-sm">
-                    <h4 className="font-semibold text-neutral-darkest mb-2 flex items-center">
-                      <i className="fas fa-lightbulb text-accent-dark mr-2"></i>
-                      Tips Peningkatan Kondisi
-                    </h4>
-                    <ul className="space-y-1 text-neutral-dark">
-                      <li className="flex items-start">
-                        <i className="fas fa-chevron-right text-primary mr-2 mt-1 text-xs"></i>
-                        <span>{stats.currentLux < 2000 ? "Tingkatkan paparan cahaya dengan mengurangi naungan" : stats.currentLux > 4000 ? "Kurangi paparan cahaya langsung dengan memberikan naungan" : "Pertahankan kondisi cahaya saat ini"}</span>
-                      </li>
-                      <li className="flex items-start">
-                        <i className="fas fa-chevron-right text-primary mr-2 mt-1 text-xs"></i>
-                        <span>{stats.currentTemp < 22 ? "Tingkatkan suhu dengan mengurangi ventilasi atau menggunakan pemanas" : stats.currentTemp > 30 ? "Kurangi suhu dengan meningkatkan ventilasi atau pendinginan" : "Pertahankan kondisi suhu saat ini"}</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="flex">
-                    <button className="px-4 py-2 bg-primary text-white rounded-lg shadow-sm hover:bg-primary-dark transition-colors flex items-center">
-                      <i className="fas fa-file-download mr-2"></i>
-                      Unduh Laporan
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <InfoCard
+            title="Status Suhu"
+            color="secondary"
+            isOptimal={stats.currentTemp >= 22 && stats.currentTemp <= 30}
+            data={[
+              "Rentang ideal: 22°C - 30°C",
+              "Fluktuasi suhu terjaga dengan baik",
+              `Suhu saat ini: ${stats.currentTemp.toFixed(1)}°C (${stats.currentTemp >= 22 && stats.currentTemp <= 30 ? "optimal" : "perlu penyesuaian"})`
+            ]}
+          />
         </div>
 
-        {/* Recent Data Section */}
+        {/* Recent Data */}
         <div id="data-terbaru" className="scroll-mt-20">
           <RecentData
-            data={recentData.slice(0, 5)}
+            data={recentData.slice(-5)}
             onRefresh={handleDataRefresh}
             isLoading={isLoading}
           />

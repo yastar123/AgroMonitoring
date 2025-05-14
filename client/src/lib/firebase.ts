@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, query, orderBy, limit, onSnapshot, Timestamp, DocumentData } from "firebase/firestore";
+import { getDatabase, ref, onValue, off, query, orderByChild, limitToLast } from "firebase/database";
 import { getAnalytics } from "firebase/analytics";
 import { FirebaseSensorData } from "@shared/schema";
 
@@ -7,6 +7,7 @@ import { FirebaseSensorData } from "@shared/schema";
 const firebaseConfig = {
   apiKey: "AIzaSyDNYM-bGraldjrpeSnbSBQ1QnvvRA03dCg",
   authDomain: "monitoring-5f6a6.firebaseapp.com",
+  databaseURL: "https://monitoring-5f6a6-default-rtdb.firebaseio.com",
   projectId: "monitoring-5f6a6",
   storageBucket: "monitoring-5f6a6.firebasestorage.app",
   messagingSenderId: "425534358150",
@@ -16,21 +17,17 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = getDatabase(app);
 // Initialize Analytics only in browser environment
 const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
 
-// Collection references
-const sensorDataCollectionRef = collection(db, "sensor_data");
-
-// Convert Firestore data to our schema
-export const convertFirestoreData = (doc: DocumentData): FirebaseSensorData => {
-  const data = doc.data();
+// Convert Realtime Database data to our schema
+export const convertRealtimeData = (data: any): FirebaseSensorData => {
   return {
-    timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toMillis() : data.timestamp,
-    light_intensity: Number(data.light_intensity),
-    temperature: Number(data.temperature),
-    status: data.status || getStatus(Number(data.light_intensity), Number(data.temperature))
+    timestamp: data.timestamp || Date.now(),
+    light_intensity: Number(data.lux) || 0,
+    temperature: Number(data.temperature) || 0,
+    status: getStatus(Number(data.lux), Number(data.temperature))
   };
 };
 
@@ -49,44 +46,33 @@ export const getStatus = (lightIntensity: number, temperature: number): string =
 // Hook to get real-time sensor data
 export const subscribeToRecentSensorData = (
   callback: (data: FirebaseSensorData[]) => void,
-  count: number = 5
+  count: number = 50
 ) => {
-  const recentDataQuery = query(
-    sensorDataCollectionRef,
-    orderBy("timestamp", "desc"),
-    limit(count)
-  );
+  const dataRef = ref(db, 'data');
+  const recentDataQuery = query(dataRef, orderByChild('timestamp'), limitToLast(count));
   
-  return onSnapshot(recentDataQuery, 
-    (snapshot) => {
-      const sensorDataArray: FirebaseSensorData[] = [];
-      snapshot.forEach((doc) => {
-        sensorDataArray.push(convertFirestoreData(doc));
-      });
-      callback(sensorDataArray);
-    },
-    (error) => {
-      console.error("Error fetching recent sensor data:", error);
-      // If there's a permission error, we'll provide sample data for demonstration
-      if (error.code === 'permission-denied') {
-        // Generate dummy data for demonstration purposes
-        const now = Date.now();
-        const dummyData: FirebaseSensorData[] = [];
-        
-        for (let i = 0; i < count; i++) {
-          const timestamp = now - (i * 15 * 60 * 1000); // 15 minute intervals
-          dummyData.push({
-            timestamp: timestamp,
-            light_intensity: 2500 + Math.random() * 1500,
-            temperature: 25 + (Math.random() * 5 - 2.5),
-            status: "Optimal"
-          });
+  const unsubscribe = onValue(recentDataQuery, (snapshot) => {
+    const dataArray: FirebaseSensorData[] = [];
+    snapshot.forEach((timestampSnapshot) => {
+      // Handle the nested structure with unique IDs
+      timestampSnapshot.forEach((idSnapshot) => {
+        const data = idSnapshot.val();
+        if (data) {
+          dataArray.push(convertRealtimeData(data));
         }
-        
-        callback(dummyData);
-      }
-    }
-  );
+      });
+    });
+    // Sort by timestamp in descending order (newest first)
+    dataArray.sort((a, b) => b.timestamp - a.timestamp);
+    callback(dataArray);
+  }, (error) => {
+    console.error("Error fetching sensor data:", error);
+  });
+
+  return () => {
+    off(dataRef);
+    unsubscribe();
+  };
 };
 
 // Hook to get real-time sensor data for charts with time range filter
@@ -94,55 +80,37 @@ export const subscribeToChartData = (
   callback: (data: FirebaseSensorData[]) => void,
   hours: number = 24
 ) => {
+  const dataRef = ref(db, 'data');
   // Calculate timestamp for filtering
-  const hoursAgo = new Date();
-  hoursAgo.setHours(hoursAgo.getHours() - hours);
-  
+  const hoursAgo = Date.now() - (hours * 60 * 60 * 1000);
   const chartDataQuery = query(
-    sensorDataCollectionRef,
-    orderBy("timestamp", "asc")
+    dataRef,
+    orderByChild('timestamp'),
+    limitToLast(hours === 24 ? 24 : hours === 168 ? 168 : 720) // 24h, 7d, or 30d worth of data points
   );
   
-  return onSnapshot(chartDataQuery, 
-    (snapshot) => {
-      const sensorDataArray: FirebaseSensorData[] = [];
-      snapshot.forEach((doc) => {
-        const data = convertFirestoreData(doc);
-        // Client-side filtering by time range
-        if (data.timestamp >= hoursAgo.getTime()) {
-          sensorDataArray.push(data);
+  const unsubscribe = onValue(chartDataQuery, (snapshot) => {
+    const dataArray: FirebaseSensorData[] = [];
+    snapshot.forEach((timestampSnapshot) => {
+      // Handle the nested structure with unique IDs
+      timestampSnapshot.forEach((idSnapshot) => {
+        const data = idSnapshot.val();
+        if (data && data.timestamp >= hoursAgo) {
+          dataArray.push(convertRealtimeData(data));
         }
       });
-      callback(sensorDataArray);
-    },
-    (error) => {
-      console.error("Error fetching chart data:", error);
-      // If there's a permission error, we'll provide sample data for demonstration
-      if (error.code === 'permission-denied') {
-        // Generate dummy data for the chart
-        const now = Date.now();
-        const dummyData: FirebaseSensorData[] = [];
-        const dataPoints = hours === 24 ? 24 : hours === 168 ? 42 : 90; // Number of data points based on time range
-        const interval = hours * 3600000 / dataPoints; // Time interval between data points
-        
-        for (let i = 0; i < dataPoints; i++) {
-          const timestamp = now - (hours * 3600000) + (i * interval);
-          // Create a sine wave pattern for the demo data
-          const progress = i / dataPoints;
-          const sinValue = Math.sin(progress * Math.PI * 2);
-          
-          dummyData.push({
-            timestamp: timestamp,
-            light_intensity: 2500 + 1500 * sinValue + Math.random() * 300,
-            temperature: 25 + 3 * sinValue + Math.random() * 1.5,
-            status: "Optimal"
-          });
-        }
-        
-        callback(dummyData);
-      }
-    }
-  );
+    });
+    // Sort by timestamp in ascending order (oldest first) for charts
+    dataArray.sort((a, b) => a.timestamp - b.timestamp);
+    callback(dataArray);
+  }, (error) => {
+    console.error("Error fetching chart data:", error);
+  });
+
+  return () => {
+    off(dataRef);
+    unsubscribe();
+  };
 };
 
 export { db };
