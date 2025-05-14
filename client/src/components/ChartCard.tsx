@@ -1,18 +1,21 @@
 import { useState, useEffect } from "react";
-import { 
-  ResponsiveContainer, 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend 
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  BarChart,
+  Bar
 } from "recharts";
 import { FirebaseSensorData } from "@shared/schema";
 import { ChartPeriod, formatTime } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import GaugeCard from "./GaugeCard";
 
 interface ChartCardProps {
   title: string;
@@ -40,7 +43,8 @@ export default function ChartCard({
   isLoading = false
 }: ChartCardProps) {
   const [formattedData, setFormattedData] = useState<any[]>([]);
-  
+  const [chartType, setChartType] = useState<'line' | 'bar' | 'gauge'>('line');
+
   // Colors
   const colorMap = {
     primary: {
@@ -56,17 +60,17 @@ export default function ChartCard({
       bg: "rgba(121, 85, 72, 0.1)"
     },
   };
-  
+
   // Format data for chart
   useEffect(() => {
     if (data.length === 0) return;
-    
+
     // Sort by timestamp
     const sortedData = [...data].sort((a, b) => a.timestamp - b.timestamp);
-    
+
     // Apply time interval sampling based on period
     let sampledData = sortedData;
-    
+
     if (period === '7d' && sortedData.length > 168) {
       // Sample every hour
       sampledData = sortedData.filter((_, index) => index % 4 === 0);
@@ -74,26 +78,55 @@ export default function ChartCard({
       // Sample every 4 hours
       sampledData = sortedData.filter((_, index) => index % 16 === 0);
     }
-    
+
     // Format for chart
     const formatted = sampledData.map(item => ({
       name: formatTime(item.timestamp),
       [dataKey]: item[dataKey],
       timestamp: item.timestamp
     }));
-    
+
     setFormattedData(formatted);
   }, [data, period, dataKey]);
-  
+
+  console.log("ChartCard data:", data);
+
+  // Untuk Gauge, ambil data terakhir
+  const latestValue = formattedData.length > 0 ? formattedData[formattedData.length - 1][dataKey] : 0;
+  const gaugeLabel = title;
+  const gaugeColor = color === 'primary' ? '#388e3c' : '#795548';
+  const gaugeMax = dataKey === 'light_intensity' ? 4000 : 40;
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 relative overflow-hidden">
+      {/* Chart Type Tabs */}
+      <div className="flex gap-2 mb-2">
+        <button
+          className={`px-3 py-1 rounded-md text-sm font-medium ${chartType === 'line' ? 'bg-primary text-white' : 'bg-gray-100 text-primary'}`}
+          onClick={() => setChartType('line')}
+        >
+          Line Chart
+        </button>
+        <button
+          className={`px-3 py-1 rounded-md text-sm font-medium ${chartType === 'bar' ? 'bg-primary text-white' : 'bg-gray-100 text-primary'}`}
+          onClick={() => setChartType('bar')}
+        >
+          Bar Chart
+        </button>
+        <button
+          className={`px-3 py-1 rounded-md text-sm font-medium ${chartType === 'gauge' ? 'bg-primary text-white' : 'bg-gray-100 text-primary'}`}
+          onClick={() => setChartType('gauge')}
+        >
+          Gauge
+        </button>
+      </div>
       {/* Background decorative patterns */}
       <div className="absolute inset-0 opacity-5 pointer-events-none">
         <div className={`absolute -bottom-8 -right-8 text-8xl text-${color} transform rotate-12`}>
           <i className={`fas fa-${dataKey === 'light_intensity' ? 'sun' : 'temperature-half'}`}></i>
         </div>
       </div>
-      
+
       <div className="relative">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3 md:gap-0">
           <div className="flex items-center">
@@ -101,24 +134,24 @@ export default function ChartCard({
             <h3 className="font-semibold text-neutral-darkest text-lg">{title}</h3>
           </div>
           <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className={`${period === '24h' ? colorMap[color].button : colorMap[color].inactive} rounded-md`}
               onClick={() => onPeriodChange('24h')}
             >
               24 Jam
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className={`${period === '7d' ? colorMap[color].button : colorMap[color].inactive} rounded-md`}
               onClick={() => onPeriodChange('7d')}
             >
               7 Hari
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className={`${period === '30d' ? colorMap[color].button : colorMap[color].inactive} rounded-md`}
               onClick={() => onPeriodChange('30d')}
@@ -128,63 +161,86 @@ export default function ChartCard({
           </div>
         </div>
       </div>
-      
+
       <div className="chart-container">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <Skeleton className="h-[90%] w-[95%]" />
           </div>
         ) : formattedData.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={formattedData}
-              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-              <XAxis 
-                dataKey="name" 
-                fontSize={12}
-                tickMargin={10}
-                stroke="#9E9E9E"
+          chartType === 'line' ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={formattedData}
+                margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                <XAxis
+                  dataKey="name"
+                  fontSize={12}
+                  tickMargin={10}
+                  stroke="#9E9E9E"
+                />
+                <YAxis
+                  fontSize={12}
+                  tickMargin={10}
+                  stroke="#9E9E9E"
+                  domain={[
+                    dataKey === 'temperature' ? 20 : 'auto',
+                    dataKey === 'temperature' ? 40 : 'auto'
+                  ]}
+                />
+                <Tooltip
+                  formatter={(value) => [`${value} ${unit}`, title]}
+                  labelFormatter={(label) => `Waktu: ${label}`}
+                />
+                <Line
+                  type="monotone"
+                  dataKey={dataKey}
+                  name={dataKey === 'light_intensity' ? 'Intensitas Cahaya' : 'Suhu'}
+                  stroke={colorMap[color].line}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                  fill={colorMap[color].bg}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : chartType === 'bar' ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={formattedData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey={dataKey} fill={color === "primary" ? "#388e3c" : "#795548"} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex justify-center items-center h-[300px]">
+              <GaugeCard
+                value={latestValue}
+                max={gaugeMax}
+                label={gaugeLabel}
+                color={gaugeColor}
+                unit={unit}
               />
-              <YAxis 
-                fontSize={12}
-                tickMargin={10}
-                stroke="#9E9E9E"
-                domain={[
-                  dataKey === 'temperature' ? 20 : 'auto',
-                  dataKey === 'temperature' ? 40 : 'auto'
-                ]}
-              />
-              <Tooltip 
-                formatter={(value) => [`${value} ${unit}`, title]}
-                labelFormatter={(label) => `Waktu: ${label}`}
-              />
-              <Line
-                type="monotone"
-                dataKey={dataKey}
-                name={dataKey === 'light_intensity' ? 'Intensitas Cahaya' : 'Suhu'}
-                stroke={colorMap[color].line}
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
-                fill={colorMap[color].bg}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+            </div>
+          )
         ) : (
           <div className="flex items-center justify-center h-full text-neutral-dark">
             Tidak ada data tersedia
           </div>
         )}
       </div>
-      
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-4 pt-3 border-t border-gray-100">
         <div className="flex items-center">
           <div className={`h-4 w-4 ${color === 'primary' ? 'bg-primary' : 'bg-secondary'} rounded-full mr-2 shadow-sm`}></div>
           <span className="text-sm text-neutral-dark">{dataKey === 'light_intensity' ? 'Intensitas Cahaya (lux)' : 'Suhu (°C)'}</span>
         </div>
-        
+
         <div className="flex gap-3 text-xs">
           <div className="bg-gray-100 px-3 py-1.5 rounded-lg flex items-center">
             <span className="font-medium text-neutral-darkest mr-1">Min:</span>
@@ -196,7 +252,7 @@ export default function ChartCard({
               )} {unit}
             </span>
           </div>
-          
+
           <div className="bg-gray-100 px-3 py-1.5 rounded-lg flex items-center">
             <span className="font-medium text-neutral-darkest mr-1">Max:</span>
             <span>

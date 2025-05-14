@@ -212,6 +212,12 @@ export default function Dashboard() {
           />
         </div>
 
+        {/* Tips Pertanian */}
+        <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-lg mt-4 flex items-center gap-3 mb-8 shadow-sm">
+          <i className="fas fa-leaf text-green-600 text-xl"></i>
+          <span className="text-green-900 text-sm font-medium">Tips: Pastikan tanaman mendapat cahaya pagi minimal 6 jam sehari dan cek suhu lingkungan secara berkala untuk pertumbuhan optimal.</span>
+        </div>
+
         {/* Info Cards */}
         <div className="grid text-white grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           <InfoCard

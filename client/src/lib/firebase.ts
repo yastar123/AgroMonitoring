@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, onValue, off, query, orderByChild, limitToLast } from "firebase/database";
+import { getDatabase, ref, onValue, off } from "firebase/database";
 import { getAnalytics } from "firebase/analytics";
 import { FirebaseSensorData } from "@shared/schema";
 
@@ -23,8 +23,10 @@ const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
 
 // Convert Realtime Database data to our schema
 export const convertRealtimeData = (data: any): FirebaseSensorData => {
+  // Konversi timestamp ke milidetik jika perlu
+  const ts = data.timestamp > 1e12 ? data.timestamp : data.timestamp * 1000;
   return {
-    timestamp: data.timestamp || Date.now(),
+    timestamp: ts,
     light_intensity: Number(data.lux) || 0,
     temperature: Number(data.temperature) || 0,
     status: getStatus(Number(data.lux), Number(data.temperature))
@@ -49,12 +51,9 @@ export const subscribeToRecentSensorData = (
   count: number = 50
 ) => {
   const dataRef = ref(db, 'data');
-  const recentDataQuery = query(dataRef, orderByChild('timestamp'), limitToLast(count));
-  
-  const unsubscribe = onValue(recentDataQuery, (snapshot) => {
+  const unsubscribe = onValue(dataRef, (snapshot) => {
     const dataArray: FirebaseSensorData[] = [];
     snapshot.forEach((timestampSnapshot) => {
-      // Handle the nested structure with unique IDs
       timestampSnapshot.forEach((idSnapshot) => {
         const data = idSnapshot.val();
         if (data) {
@@ -62,9 +61,9 @@ export const subscribeToRecentSensorData = (
         }
       });
     });
-    // Sort by timestamp in descending order (newest first)
+    // Sort by timestamp DESC (terbaru dulu)
     dataArray.sort((a, b) => b.timestamp - a.timestamp);
-    callback(dataArray);
+    callback(dataArray.slice(0, count));
   }, (error) => {
     console.error("Error fetching sensor data:", error);
   });
@@ -81,26 +80,21 @@ export const subscribeToChartData = (
   hours: number = 24
 ) => {
   const dataRef = ref(db, 'data');
-  // Calculate timestamp for filtering
-  const hoursAgo = Date.now() - (hours * 60 * 60 * 1000);
-  const chartDataQuery = query(
-    dataRef,
-    orderByChild('timestamp'),
-    limitToLast(hours === 24 ? 24 : hours === 168 ? 168 : 720) // 24h, 7d, or 30d worth of data points
-  );
-  
-  const unsubscribe = onValue(chartDataQuery, (snapshot) => {
+  const unsubscribe = onValue(dataRef, (snapshot) => {
     const dataArray: FirebaseSensorData[] = [];
     snapshot.forEach((timestampSnapshot) => {
-      // Handle the nested structure with unique IDs
       timestampSnapshot.forEach((idSnapshot) => {
         const data = idSnapshot.val();
-        if (data && data.timestamp >= hoursAgo) {
-          dataArray.push(convertRealtimeData(data));
+        if (data) {
+          const ts = data.timestamp > 1e12 ? data.timestamp : data.timestamp * 1000;
+          // Filter by time range
+          if (ts >= Date.now() - hours * 60 * 60 * 1000) {
+            dataArray.push(convertRealtimeData(data));
+          }
         }
       });
     });
-    // Sort by timestamp in ascending order (oldest first) for charts
+    // Sort by timestamp ASC (terlama dulu)
     dataArray.sort((a, b) => a.timestamp - b.timestamp);
     callback(dataArray);
   }, (error) => {
