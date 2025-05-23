@@ -91,8 +91,8 @@ export default function RecentData({ data, onRefresh, isLoading = false }: Recen
               ))
             ) : data.length > 0 ? (
               data.map((reading, index) => {
-                const isLightOptimal = reading.light_intensity >= 2000 && reading.light_intensity <= 4000;
-                const isTempOptimal = reading.temperature >= 22 && reading.temperature <= 30;
+                const isLightOptimal = reading.light_intensity >= 1 && reading.light_intensity <= 4000;
+                const isTempOptimal = reading.temperature >= 1 && reading.temperature <= 30;
                 const isOptimal = isLightOptimal && isTempOptimal;
                 
                 // Determine status style
