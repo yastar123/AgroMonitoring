@@ -6,10 +6,13 @@ import ChartCard from "@/components/ChartCard";
 import InfoCard from "@/components/InfoCard";
 import RecentData from "@/components/RecentData";
 import ImageSection from "@/components/ImageSection";
+import TemperatureAlert from "@/components/TemperatureAlert";
+import PredictionCard from "@/components/PredictionCard";
 import { subscribeToRecentSensorData, subscribeToChartData } from "@/lib/firebase";
 import { FirebaseSensorData } from "@shared/schema";
 import { ChartPeriod, calculateStats, getTimeSinceUpdate, TrendType } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { Info, Leaf } from 'lucide-react';
 
 export default function Dashboard() {
   const [recentData, setRecentData] = useState<FirebaseSensorData[]>([]);
@@ -46,6 +49,8 @@ export default function Dashboard() {
           const newData = [...prevData, ...data].slice(-24);
           return newData;
         });
+      } else {
+        setChartData([]); // Clear chart data if no new data
       }
     });
 
@@ -56,7 +61,9 @@ export default function Dashboard() {
   useEffect(() => {
     const interval = setInterval(() => {
       if (recentData.length > 0) {
-        setLastUpdated(getTimeSinceUpdate(recentData[recentData.length - 1].timestamp));
+        // Mengambil timestamp data terbaru untuk dihitung selisihnya
+        const latestTimestamp = recentData[recentData.length - 1].timestamp;
+        setLastUpdated(getTimeSinceUpdate(latestTimestamp));
       }
     }, 30000); // Update every 30 seconds
 
@@ -77,6 +84,10 @@ export default function Dashboard() {
     });
 
     // The data will be automatically updated through the real-time subscription
+    // We can force a re-fetch if needed, but subscription is primary
+    // Forcing re-fetch example (might need implementation in firebase.ts):
+    // refreshSensorData();
+
     setTimeout(() => {
       setIsLoading(false);
       toast({
@@ -89,10 +100,14 @@ export default function Dashboard() {
   const stats = calculateStats(recentData);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 relative overflow-x-hidden">
+      {/* Background daun transparan */}
+      <div className="absolute inset-0 pointer-events-none opacity-10 z-0">
+        <img src="/bg-leaf-pattern.svg" alt="" className="w-full h-full object-cover" />
+      </div>
       <Header />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 relative z-10">
 
         {/* Hero Section */}
         <div className="relative bg-gradient-to-r from-primary to-secondary rounded-xl overflow-hidden mb-8 shadow-lg">
@@ -212,6 +227,16 @@ export default function Dashboard() {
           />
         </div>
 
+        {/* Temperature Alert */}
+        <div className="mb-8">
+          <TemperatureAlert currentTemp={stats.currentTemp} />
+        </div>
+
+        {/* AI Prediction Card */}
+        <div className="mb-8">
+          <PredictionCard recentData={recentData} />
+        </div>
+
         {/* Tips Pertanian */}
         <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-lg mt-4 flex items-center gap-3 mb-8 shadow-sm">
           <i className="fas fa-leaf text-green-600 text-xl"></i>
@@ -243,19 +268,42 @@ export default function Dashboard() {
           />
         </div>
 
+        {/* Image Section */}
+        <div id="tentang" className="scroll-mt-20">
+          <ImageSection />
+        </div>
+
+        {/* Info Card: Penjelasan ESP32, BH1750, DS18B20 */}
+        <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-10 overflow-hidden relative flex flex-col md:flex-row gap-6 items-center">
+          <div className="flex-shrink-0 flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary text-white text-4xl shadow-md mb-4 md:mb-0">
+            <Info size={40} />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold mb-2 text-primary">Tentang Perangkat & Sensor</h3>
+            <ul className="list-disc pl-5 space-y-2 text-neutral-darkest">
+              <li>
+                <span className="font-semibold">ESP32 WROOM 32</span> adalah mikrokontroler modern dengan WiFi & Bluetooth, digunakan sebagai otak sistem monitoring ini untuk mengirim data sensor secara real-time ke Firebase.
+              </li>
+              <li>
+                <span className="font-semibold">Sensor BH1750</span> adalah sensor digital untuk mengukur intensitas cahaya (lux) dengan akurasi tinggi dan konsumsi daya rendah.
+              </li>
+              <li>
+                <span className="font-semibold">Sensor DS18B20</span> adalah sensor suhu digital yang tahan air, cocok untuk pengukuran suhu lingkungan atau media tanam secara presisi.
+              </li>
+            </ul>
+          </div>
+        </div>
+
         {/* Recent Data */}
         <div id="data-terbaru" className="scroll-mt-20">
           <RecentData
-            data={recentData.slice(-5)}
+            data={recentData.slice(-5)} // Menampilkan 5 data terbaru di tabel Recent Data
             onRefresh={handleDataRefresh}
             isLoading={isLoading}
           />
         </div>
 
-        {/* Image Section */}
-        <div id="tentang" className="scroll-mt-20">
-          <ImageSection />
-        </div>
+
       </main>
 
       <Footer />
